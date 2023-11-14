@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3 uid="uid://dnsktlw8emoau"]
+
+[ext_resource type="Texture2D" uid="uid://cpieju6ojrnxh" path="res://assets/grid_grayscale.png" id="1_dwdm2"]
+[ext_resource type="PackedScene" uid="uid://o38qsnccqy6p" path="res://assets/car.tscn" id="1_p4n8m"]
+
+[node name="Node2D" type="Node2D"]
+metadata/_edit_lock_ = true
+
+[node name="Grid" type="Sprite2D" parent="."]
+position = Vector2(561, 263)
+texture = ExtResource("1_dwdm2")
+metadata/_edit_lock_ = true
+
+[node name="car" parent="." instance=ExtResource("1_p4n8m")]
+position = Vector2(541, 101)
