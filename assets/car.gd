@@ -2,13 +2,16 @@ extends RigidBody2D
 
 class_name Car
 
+const math = preload("res://assets/math.gd")
+
 @onready var body = $RigidBody2D
 @onready var wheel_fr: Wheel = $fr
 @onready var wheel_fl: Wheel = $fl
 @onready var wheel_br: Wheel = $br
 @onready var wheel_bl: Wheel = $bl
 
-@onready var wheels = [wheel_fr, wheel_fl, wheel_br, wheel_bl]
+#@onready var wheels = [wheel_fr, wheel_fl, wheel_br, wheel_bl]
+@onready var wheels = [wheel_br, wheel_bl, wheel_fr, wheel_fl]
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -17,31 +20,43 @@ func _ready():
 func weightOnWheel(wheel: Wheel):
 	return mass / 4
 
-func getSignedTurningRadius():
+func steeringPos():
 	var t = Time.get_ticks_msec() / 1000.0
-	return 100 + (1 + sin(t)) * 100
-	#return 10000
+	#return 0.000001 
+	return sin(t * .25) * .005
+
+func getSignedTurningRadius():
+	#var t = Time.get_ticks_msec() / 1000.0
+	#return 100 + (1 + sin(t)) * 100
+	#return 200
+	return 1 / tan(steeringPos())
 	
 func rearAxisCenter():
 	return (wheel_bl.global_position + wheel_br.global_position) / 2
 	
 func getCenterOfTurning():
 	var c = rearAxisCenter()
-	var axleDir = global_rotation + PI / 2
-	var axleDir2 = Vector2(cos(axleDir), sin(axleDir))
-	return c + axleDir2 * getSignedTurningRadius()
+	var axleAngle = global_rotation + PI / 2
+	var axleDir = Vector2(cos(axleAngle), sin(axleAngle))
+	return c + axleDir * getSignedTurningRadius()
 
 # Computes velocity of a point on the vehicle.
 # Given `pos` and returned velocity are in global space.
 func velocityAtPosition(pos: Vector2):
-	var carPos = global_position
+	var carPos = global_transform * center_of_mass
 	var r = pos - carPos
 	var v = linear_velocity
 	var av = angular_velocity
 	return Vector2(
-		v.x + r.y * av,
-		v.y - r.x * av,
+		v.x - r.y * av,
+		v.y + r.x * av,
 	)
+
+# The effective mass felt by a force pushing at `pos` in direction `dir`.
+func effectiveMass(pos: Vector2, dir: Vector2):
+	var offset = pos - global_position
+	var r = math.cross2D(offset, dir)
+	return 1 / ( 1 / mass + r ** 2 / inertia )
 
 func setWheelRotations():
 	var center = getCenterOfTurning()
@@ -62,16 +77,16 @@ func drawWheelState(wheel: Node2D):
 		#0, PI * 2,
 		100, Color.RED, 2.0, true
 	)
-	draw_line(
-		wheelPos,
-		wheelPos + wheel.forwardDirection() * 50,
-		Color.BLUE, 1.0, true
-	)
-	draw_line(
-		wheelPos,
-		wheelPos + wheel.normalDirection() * 25,
-		Color.GREEN, 1.0, true
-	)
+	#draw_line(
+	#	wheelPos,
+	#	wheelPos + wheel.forwardDirection() * 50,
+	#	Color.BLUE, 1.0, true
+	#)
+	#draw_line(
+	#	wheelPos,
+	#	wheelPos + wheel.normalDirection() * 25,
+	#	Color.GREEN, 1.0, true
+	#)
 
 func _draw():
 	var t = Time.get_ticks_msec() / 1000.0
@@ -80,20 +95,34 @@ func _draw():
 	var center = getCenterOfTurning()
 	
 	draw_set_transform_matrix(global_transform.inverse())
+	
+	var cm = global_transform * center_of_mass
+	draw_circle(cm, 4, Color.RED)
+	
+	draw_line(
+		cm, cm + linear_velocity,
+		Color.GREEN, 2.0, true
+	)
+	
 	draw_circle(center, 4, Color.RED)
 	
 	for wheel in wheels:
 		drawWheelState(wheel)
 	
-	
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
 	setWheelRotations()
 	
-	apply_force(
-		global_transform.x * 10000,
-		center_of_mass
+	apply_central_force(
+		global_transform.x * mass * .1,
 	)
+	#apply_torque(1000000)
+	
+	for wheel in wheels:
+		wheel.solverStartFrame()
+	for i in 10:
+		for wheel in wheels:
+			wheel.solveNormalImpulse(delta, .0001)
 	
 	queue_redraw()
 	pass

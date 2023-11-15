@@ -1,7 +1,8 @@
-[gd_scene load_steps=5 format=3 uid="uid://dnsktlw8emoau"]
+[gd_scene load_steps=6 format=3 uid="uid://dnsktlw8emoau"]
 
 [ext_resource type="Texture2D" uid="uid://cpieju6ojrnxh" path="res://assets/grid_grayscale.png" id="1_dwdm2"]
 [ext_resource type="PackedScene" uid="uid://o38qsnccqy6p" path="res://assets/car.tscn" id="1_p4n8m"]
+[ext_resource type="Script" path="res://Camera2D.gd" id="3_pbovu"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_f23xa"]
 size = Vector2(1153, 21)
@@ -13,29 +14,40 @@ size = Vector2(649, 20.0002)
 metadata/_edit_lock_ = true
 
 [node name="Grid" type="Sprite2D" parent="."]
+texture_filter = 1
 position = Vector2(561, 263)
+scale = Vector2(5.035, 5.035)
 texture = ExtResource("1_dwdm2")
 metadata/_edit_lock_ = true
 
 [node name="car" parent="." instance=ExtResource("1_p4n8m")]
 position = Vector2(562, 264)
 
+[node name="Camera2D" type="Camera2D" parent="." node_paths=PackedStringArray("car")]
+position = Vector2(562, 264)
+script = ExtResource("3_pbovu")
+car = NodePath("../car")
+
 [node name="walls" type="StaticBody2D" parent="."]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="walls"]
 position = Vector2(576, 10)
 shape = SubResource("RectangleShape2D_f23xa")
+disabled = true
 
 [node name="CollisionShape2D2" type="CollisionShape2D" parent="walls"]
 position = Vector2(575.5, 637.5)
 shape = SubResource("RectangleShape2D_f23xa")
+disabled = true
 
 [node name="CollisionShape2D3" type="CollisionShape2D" parent="walls"]
 position = Vector2(1142, 323.5)
 rotation = -1.57079
 shape = SubResource("RectangleShape2D_sy6ur")
+disabled = true
 
 [node name="CollisionShape2D4" type="CollisionShape2D" parent="walls"]
 position = Vector2(9, 323)
 rotation = -1.57079
 shape = SubResource("RectangleShape2D_sy6ur")
+disabled = true

@@ -10,6 +10,7 @@ size = Vector2(152, 80)
 [node name="car" type="RigidBody2D"]
 mass = 1324.0
 inertia = 132484.0
+center_of_mass_mode = 1
 gravity_scale = 0.0
 script = ExtResource("1_tauuo")
 
@@ -22,7 +23,6 @@ position = Vector2(76, 40)
 rotation = 1.5708
 texture = ExtResource("1_mynwc")
 script = ExtResource("3_gk8vh")
-isRightWheel = true
 
 [node name="fl" type="Sprite2D" parent="."]
 texture_filter = 3
@@ -37,7 +37,6 @@ position = Vector2(-76, 40)
 rotation = 1.5708
 texture = ExtResource("1_mynwc")
 script = ExtResource("3_gk8vh")
-isRightWheel = true
 
 [node name="bl" type="Sprite2D" parent="."]
 texture_filter = 3
@@ -60,4 +59,4 @@ grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(76.066, 39.8841)
 pivot_offset = Vector2(1, 1)
-color = Color(0.619608, 0.239216, 0.286275, 0.411765)
+color = Color(0.619608, 0.239216, 0.286275, 0.752941)

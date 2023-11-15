@@ -4,17 +4,17 @@ class_name Wheel
 
 var car: Car
 
-@export var radius = 35.0 
-@export var mass = 26.0 # kg
-@export var momentOfInertia = mass * radius ** 2
-@export var staticFrictionCoef = 0.9
-#@export var kineticFrictionCoef = 0.68
-@export var kineticFrictionCoef = 0.99
-@export var rollingFrictionCoef = kineticFrictionCoef * .1
-
-@export var isRightWheel = false
+var radius = 35.0 
+var mass = 26.0 # kg
+var staticFrictionCoef = 0.9
+var kineticFrictionCoef = 0.68
+var rollingFrictionCoef = kineticFrictionCoef * .01
+var isRightWheel = false
 
 var angularMomentum = 0.0
+var momentOfInertia = mass * radius ** 2
+
+var impulseAppliedThisFrame = Vector2(0,0)
 
 # The forward longitudinal direction
 func forwardDirection():
@@ -33,23 +33,39 @@ func _ready():
 	car = get_parent()
 	pass # Replace with function body.
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta):
-	
+func solverStartFrame():
+	impulseAppliedThisFrame = Vector2(0,0)
+
+func solveNormalImpulse(dt, scaleImpulse):
 	var pos = global_position
 	var vel = car.velocityAtPosition(pos)
-	var facingDir = forwardDirection()
 	var normalDir = normalDirection()
 	
-	var forwardVel = facingDir.dot(vel)
-	var normalVel = normalDir.dot(vel)
+	var normalVel = vel.dot(normalDir)
 	
 	var weightOnWheel = car.weightOnWheel(self)
 	
-	var forwardFriction = weightOnWheel * rollingFrictionCoef * sign(-forwardVel)
-	var normalFriction = weightOnWheel * kineticFrictionCoef * sign(-normalVel)
+	var maxForce = weightOnWheel * staticFrictionCoef
+	var maxImpulse = maxForce * dt
 	
-	var friction = facingDir * forwardFriction + normalDir * normalFriction
-	car.apply_force(friction * .1, pos)
+	var impulse = -normalVel * car.effectiveMass(pos, normalDir) * scaleImpulse
+	if impulse > maxImpulse:
+		impulse = weightOnWheel * dt * kineticFrictionCoef * sign(impulse) * scaleImpulse
 	
+	var impulseVec = normalDir * impulse
+	impulseAppliedThisFrame += impulseVec
+	
+	car.apply_impulse(impulseVec, pos)
+
+func _draw():
+	draw_set_transform_matrix(global_transform.inverse())
+	draw_line(
+		global_position,
+		global_position + impulseAppliedThisFrame * 20,
+		Color.BLUE, 1.0, true
+	)
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta):
+	queue_redraw()
 	pass
