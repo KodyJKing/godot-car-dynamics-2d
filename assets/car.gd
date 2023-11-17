@@ -22,13 +22,10 @@ func weightOnWheel(wheel: Wheel):
 
 func steeringPos():
 	var t = Time.get_ticks_msec() / 1000.0
-	#return 0.000001 
-	return sin(t * .25) * .005
+	#return 0.01 
+	return sin(t * .5) * .005
 
 func getSignedTurningRadius():
-	#var t = Time.get_ticks_msec() / 1000.0
-	#return 100 + (1 + sin(t)) * 100
-	#return 200
 	return 1 / tan(steeringPos())
 	
 func rearAxisCenter():
@@ -36,8 +33,7 @@ func rearAxisCenter():
 	
 func getCenterOfTurning():
 	var c = rearAxisCenter()
-	var axleAngle = global_rotation + PI / 2
-	var axleDir = Vector2(cos(axleAngle), sin(axleAngle))
+	var axleDir = global_transform.y
 	return c + axleDir * getSignedTurningRadius()
 
 # Computes velocity of a point on the vehicle.
@@ -69,7 +65,7 @@ func drawWheelState(wheel: Node2D):
 	var toWheel = wheelPos - turningCenter
 	var toWheelRads = toWheel.angle()
 	var radius = toWheel.length()
-	var dTheta = 100 / radius
+	var dTheta = 50 / radius
 	draw_arc(
 		turningCenter, radius,
 		toWheelRads - dTheta,
@@ -97,7 +93,7 @@ func _draw():
 	draw_set_transform_matrix(global_transform.inverse())
 	
 	var cm = global_transform * center_of_mass
-	draw_circle(cm, 4, Color.RED)
+	draw_circle(cm, 4, Color.GREEN)
 	
 	draw_line(
 		cm, cm + linear_velocity,
@@ -109,20 +105,19 @@ func _draw():
 	for wheel in wheels:
 		drawWheelState(wheel)
 	
-# Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
+	pass
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _physics_process(delta):
 	setWheelRotations()
 	
 	apply_central_force(
-		global_transform.x * mass * .1,
+		global_transform.x * mass * 2.0
 	)
-	#apply_torque(1000000)
 	
 	for wheel in wheels:
-		wheel.solverStartFrame()
-	for i in 10:
-		for wheel in wheels:
-			wheel.solveNormalImpulse(delta, .0001)
+		wheel.applyForce(delta)
 	
 	queue_redraw()
 	pass

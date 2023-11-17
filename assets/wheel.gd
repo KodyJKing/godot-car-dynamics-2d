@@ -6,15 +6,15 @@ var car: Car
 
 var radius = 35.0 
 var mass = 26.0 # kg
-var staticFrictionCoef = 0.9
-var kineticFrictionCoef = 0.68
+var staticFrictionCoef = 10
+var kineticFrictionCoef = 0.9
 var rollingFrictionCoef = kineticFrictionCoef * .01
 var isRightWheel = false
 
 var angularMomentum = 0.0
 var momentOfInertia = mass * radius ** 2
 
-var impulseAppliedThisFrame = Vector2(0,0)
+var lateralForceThisFrame = Vector2(0,0)
 
 # The forward longitudinal direction
 func forwardDirection():
@@ -33,37 +33,44 @@ func _ready():
 	car = get_parent()
 	pass # Replace with function body.
 
-func solverStartFrame():
-	impulseAppliedThisFrame = Vector2(0,0)
+func slipForce(angle):
+	var limit = 4 * PI / 180
+	var slope = 1 / limit
+	if (absf(angle) > limit):
+		angle = sign(angle) * limit
+	return slope * angle
 
-func solveNormalImpulse(dt, scaleImpulse):
+func applyForce(dt):
 	var pos = global_position
-	var vel = car.velocityAtPosition(pos)
-	var normalDir = normalDirection()
+	var vel: Vector2 = car.velocityAtPosition(pos)
 	
-	var normalVel = vel.dot(normalDir)
+	if vel.length() < 0.0001:
+		return
 	
-	var weightOnWheel = car.weightOnWheel(self)
+	var normalDir = normalDirection().normalized()
+	var sinSlip = vel.normalized().dot(normalDir)
+	var slipAngle = -asin(sinSlip)
 	
-	var maxForce = weightOnWheel * staticFrictionCoef
-	var maxImpulse = maxForce * dt
+	var scalarForce = slipForce(slipAngle) * car.weightOnWheel(self) * .1
+	var force = normalDir * scalarForce
+	lateralForceThisFrame = force
 	
-	var impulse = -normalVel * car.effectiveMass(pos, normalDir) * scaleImpulse
-	if impulse > maxImpulse:
-		impulse = weightOnWheel * dt * kineticFrictionCoef * sign(impulse) * scaleImpulse
+	car.apply_force(force, pos)
 	
-	var impulseVec = normalDir * impulse
-	impulseAppliedThisFrame += impulseVec
-	
-	car.apply_impulse(impulseVec, pos)
-
 func _draw():
 	draw_set_transform_matrix(global_transform.inverse())
+	var vel = car.velocityAtPosition(global_position)
 	draw_line(
 		global_position,
-		global_position + impulseAppliedThisFrame * 20,
+		global_position + lateralForceThisFrame * 5,
 		Color.BLUE, 1.0, true
 	)
+	#draw_line(
+	#	global_position,
+	#	global_position + vel,
+	#	Color.ORANGE, 1.0, true
+	#)
+
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
